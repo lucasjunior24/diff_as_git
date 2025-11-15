@@ -102,12 +102,12 @@ class Differ:
     Class that uses the myers difference algorithm to compute and display
     the difference between two files.
     """
-
+    def __init__(self):
+        self.removed: list[int] = []
     # amount of context to show around edits
     BUFFER = 6
 
-    @staticmethod
-    def myers_git_diff(a, b):
+    def myers_git_diff(self, a, b):
         """
         Uses the myers difference algorithm to compute the difference between
         two files, and then backtracks to reconstruct the shortest edit script.
@@ -130,13 +130,30 @@ class Differ:
                     diff.appendleft(Edit("insert", a_line, b_line))
                 elif y == prev_y:
                     diff.appendleft(Edit("delete", a_line, b_line))
+                    self.removed.append(y)
                 else:
                     diff.appendleft(Edit("equal", a_line, b_line))
 
         return list(diff)
 
-    @staticmethod
-    def diff(doc1: Document, doc2: Document):
+    def get_removed(self) -> list[int]:
+        removed_order: list[int] = []
+        print(self.removed)
+        self.removed.reverse()
+        print(self.removed)
+        count = 0
+        for i, item in enumerate(self.removed):
+           
+            if item in removed_order:
+                count += 1
+                removed_order.append(item + count)
+
+            else:
+                removed_order.append(item)
+        print(removed_order)
+        return removed_order
+
+    def diff(self, doc1: Document, doc2: Document):
         """
         Finds the difference between file doc1 and file doc2.
         """
@@ -144,7 +161,7 @@ class Differ:
         print("a/", doc1.filepath)
         print("b/", doc2.filepath)
         # find the edits made between both files
-        diff = Differ.myers_git_diff(doc1.lines(), doc2.lines())
+        diff = self.myers_git_diff(doc1.lines(), doc2.lines())
         diff_locs = []
         # store the locations of each edit.
         # this preliminary step is done to be able to display

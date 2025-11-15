@@ -7,5 +7,6 @@ import sys
 if __name__ == '__main__':
     doc1 = Document(sys.argv[1])
     doc2 = Document(sys.argv[2])
-
-    Differ.diff(doc1, doc2)
+    differ = Differ()
+    differ.diff(doc1, doc2)
+    differ.get_removed()
