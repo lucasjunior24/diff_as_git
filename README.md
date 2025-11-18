@@ -8,10 +8,10 @@ This project is an implementation of the `git diff` tool in Python using the Mye
 Once you clone the repository on your machine, you can run the following command:
 
 ```bash
-$ python diff.py fileA fileB
+$ python diff.py case_one.txt case_two.txt 
 ```
 
-This will show the diff script to go from file A to file B. You can test out the command with the `test1.txt` and `test2.txt` files included in the repository.
+This will show the diff script to go from file A to file B. You can test out the command with the `case_one.txt` and `case_two.txt` files included in the repository.
 
 To have the command available at all times, make sure the script `diff.py` is executable and then include it in your `$PATH`.
 

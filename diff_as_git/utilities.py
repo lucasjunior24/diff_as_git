@@ -3,17 +3,15 @@ class Document:
     """
     Represents a document.
     """
-
-    def __init__(self, filepath):
+    def __init__(self, filepath: str):
         self.filepath = filepath
-
 
     def lines(self):
         """
         Reads a document line-by-line and creates the corresponding Line objects.
         Returns an array of lines.
         """
-        liness = []
+        liness: list[Line] = []
         print(self.filepath)
         with open(self.filepath, 'r', encoding='utf-8') as file:
             for num, line in enumerate(file):
@@ -64,7 +62,7 @@ class Edit:
     Represents an Edit from one file to another.
     """
 
-    def __init__(self, edit_type, old, new):
+    def __init__(self, edit_type: str, old: Line, new: Line):
         """
         Stores the edit type, where it can be one of insert, delete, or equal,
         along with the old and new line.

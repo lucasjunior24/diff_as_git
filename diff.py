@@ -9,4 +9,5 @@ if __name__ == '__main__':
     doc2 = Document(sys.argv[2])
     differ = Differ()
     differ.diff(doc1, doc2)
-    differ.get_removed()
+    print(differ.removed)
+    print(differ.added)

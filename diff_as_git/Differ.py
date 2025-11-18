@@ -104,6 +104,7 @@ class Differ:
     """
     def __init__(self):
         self.removed: list[int] = []
+        self.added: list[int] = []
     # amount of context to show around edits
     BUFFER = 6
 
@@ -130,28 +131,10 @@ class Differ:
                     diff.appendleft(Edit("insert", a_line, b_line))
                 elif y == prev_y:
                     diff.appendleft(Edit("delete", a_line, b_line))
-                    self.removed.append(y)
                 else:
                     diff.appendleft(Edit("equal", a_line, b_line))
 
         return list(diff)
-
-    def get_removed(self) -> list[int]:
-        removed_order: list[int] = []
-        print(self.removed)
-        self.removed.reverse()
-        print(self.removed)
-        count = 0
-        for i, item in enumerate(self.removed):
-           
-            if item in removed_order:
-                count += 1
-                removed_order.append(item + count)
-
-            else:
-                removed_order.append(item)
-        print(removed_order)
-        return removed_order
 
     def diff(self, doc1: Document, doc2: Document):
         """
@@ -196,13 +179,17 @@ class Differ:
 
         # print each chunk
         for start, end in chunk_locs:
-            to_print = diff[max(0, start - Differ.BUFFER):min(len(diff), end + 1 + Differ.BUFFER)]
+            to_print: list[Edit] = diff[max(0, start - Differ.BUFFER):min(len(diff), end + 1 + Differ.BUFFER)]
             insertions = 0
             deletions = 0
             for edit in to_print:
                 if edit.edit_type == "insert":
+                    print(edit.new.num + 1, edit)
+                    self.added.append(edit.new.num + 1)
                     insertions += 1
                 elif edit.edit_type == "delete":
+                    print(edit.old.num + 1, edit)
+                    self.removed.append(edit.old.num + 1)
                     deletions += 1
             # display a git-style header, containing the old line number where the
             # chunk starts and the length of the chunk in the old file, along with
@@ -216,5 +203,6 @@ class Differ:
             # print everything
             print(header)
             for edit in to_print:
+                ...
                 print(edit)
             print()
