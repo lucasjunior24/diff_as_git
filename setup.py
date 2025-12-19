@@ -6,7 +6,7 @@ with open("README.md", "r") as arq:
 
 setup(
     name="diff_as_git",
-    version="0.0.1",
+    version="0.1.1",
     license="MIT License",
     author="Lucas de Souza e Sousa",
     long_description=readme,

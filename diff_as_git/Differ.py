@@ -8,96 +8,8 @@ from collections import deque
 
 from .utilities import Edit, Document
 
-def myers_diff(a, b):
-    # get length of respective elements
-    m, n = len(a), len(b)
 
-    # the maximum possible D-path is the one where we delete
-    # all elements from string A and insert all elements
-    # from string B.
-    MAX = m + n
-
-    # initialize our V array, which contains the row indeces of the
-    # endpoints of the furthest-reaching D-paths in V[-D], V[-D+2], ...
-    # V[D-2], V[D]. Since the sets of furthest-reaching D-paths of even
-    # and odd diagonals are disjoint, we can use the same array to
-    # store odd endpoints whilst we use them to compute the even ones.
-    v = [-1 for i in range(2 * MAX + 1)]
-
-    # we set V[1] = 0 so that the algorithm behaves as if it starts from
-    # an imaginary move downwards from (x,y) = (0, -1)
-    v[1] = 0
-
-    trace = []
-
-    # for each possible -D to D-path, starting at 0
-    for d in range(MAX+1):
-        for k in range(-d, d+1, 2):
-            # we take a single step downwards (keeping x the same)
-            # if these conditions hold, or we go rightwards if not
-            if k == -d or (k != d and v[k - 1] < v[k + 1]):
-                x = v[k + 1]
-            else:
-                x = v[k - 1] + 1
-            # y is calculated from x and k
-            y = x - k
-            # compute the "snake" at the end of the d-path
-            # as far as we can go.
-            while x < m and y < n and a[x] == b[y]:
-                x, y = x + 1, y + 1
-            # add our endpoint to v
-            v[k] = x
-            # if we've reached the end of the graph, return the current trace
-            if x >= n and y >= m:
-                return trace
-        trace.append(v[:])
-    raise Exception("SES is longer than max length")
-
-def myers_backtrack(trace, a, b):
-    # endpoint of our SES
-    x, y = len(a), len(b)
-
-    # enumerate each v[] that we obtained from myers_diff
-    # and reverse it to get our last trace appended as the first element
-    trace_enum = list(enumerate(trace))
-    trace_enum.reverse()
-
-    # the trace number is our d-path
-    for d, v in trace_enum:
-        k = x - y
-        # if we moved horizontally, then our previous
-        # diagonal is k+1. If not, it is k-1
-        if k == -d or (k != d and v[k - 1] < v[k + 1]):
-            prev_k = k + 1
-        else:
-            prev_k = k - 1
-
-        # calculate our previous x and previous y
-        # based on our v array
-        prev_x = v[prev_k]
-        prev_y = prev_x - prev_k
-
-        # backtrack up the "snake", yielding
-        # the values of our previous x and previous y and
-        # updating
-        while x > prev_x and y > prev_y:
-            yield (x - 1, y - 1, x, y)
-            x, y = x - 1, y - 1
-
-        # if we are not yet at the start, yield where we left off.
-        if (d >= 0 and prev_y > 0):
-            yield (prev_x, prev_y, x, y)
-
-        x, y = prev_x, prev_y
-
-    # this yields the final snake that connects us to the beginning
-    # of our graph if our first edit was not at (0,0)
-    while x > 0 and y > 0:
-        yield (x - 1, y - 1, x, y)
-        x, y = x - 1, y - 1
-
-
-class Differ:
+class FileDifferentiator:
     """
     Class that uses the myers difference algorithm to compute and display
     the difference between two files.
@@ -108,6 +20,97 @@ class Differ:
     # amount of context to show around edits
     BUFFER = 6
 
+    @staticmethod
+    def myers_diff(a, b):
+        # get length of respective elements
+        m, n = len(a), len(b)
+
+        # the maximum possible D-path is the one where we delete
+        # all elements from string A and insert all elements
+        # from string B.
+        MAX = m + n
+
+        # initialize our V array, which contains the row indeces of the
+        # endpoints of the furthest-reaching D-paths in V[-D], V[-D+2], ...
+        # V[D-2], V[D]. Since the sets of furthest-reaching D-paths of even
+        # and odd diagonals are disjoint, we can use the same array to
+        # store odd endpoints whilst we use them to compute the even ones.
+        v = [-1 for i in range(2 * MAX + 1)]
+
+        # we set V[1] = 0 so that the algorithm behaves as if it starts from
+        # an imaginary move downwards from (x,y) = (0, -1)
+        v[1] = 0
+
+        trace = []
+
+        # for each possible -D to D-path, starting at 0
+        for d in range(MAX+1):
+            for k in range(-d, d+1, 2):
+                # we take a single step downwards (keeping x the same)
+                # if these conditions hold, or we go rightwards if not
+                if k == -d or (k != d and v[k - 1] < v[k + 1]):
+                    x = v[k + 1]
+                else:
+                    x = v[k - 1] + 1
+                # y is calculated from x and k
+                y = x - k
+                # compute the "snake" at the end of the d-path
+                # as far as we can go.
+                while x < m and y < n and a[x] == b[y]:
+                    x, y = x + 1, y + 1
+                # add our endpoint to v
+                v[k] = x
+                # if we've reached the end of the graph, return the current trace
+                if x >= n and y >= m:
+                    return trace
+            trace.append(v[:])
+        raise Exception("SES is longer than max length")
+    
+    @staticmethod
+    def myers_backtrack(trace, a, b):
+        # endpoint of our SES
+        x, y = len(a), len(b)
+
+        # enumerate each v[] that we obtained from myers_diff
+        # and reverse it to get our last trace appended as the first element
+        trace_enum = list(enumerate(trace))
+        trace_enum.reverse()
+
+        # the trace number is our d-path
+        for d, v in trace_enum:
+            k = x - y
+            # if we moved horizontally, then our previous
+            # diagonal is k+1. If not, it is k-1
+            if k == -d or (k != d and v[k - 1] < v[k + 1]):
+                prev_k = k + 1
+            else:
+                prev_k = k - 1
+
+            # calculate our previous x and previous y
+            # based on our v array
+            prev_x = v[prev_k]
+            prev_y = prev_x - prev_k
+
+            # backtrack up the "snake", yielding
+            # the values of our previous x and previous y and
+            # updating
+            while x > prev_x and y > prev_y:
+                yield (x - 1, y - 1, x, y)
+                x, y = x - 1, y - 1
+
+            # if we are not yet at the start, yield where we left off.
+            if (d >= 0 and prev_y > 0):
+                yield (prev_x, prev_y, x, y)
+
+            x, y = prev_x, prev_y
+
+        # this yields the final snake that connects us to the beginning
+        # of our graph if our first edit was not at (0,0)
+        while x > 0 and y > 0:
+            yield (x - 1, y - 1, x, y)
+            x, y = x - 1, y - 1
+
+
     def myers_git_diff(self, a, b):
         """
         Uses the myers difference algorithm to compute the difference between
@@ -117,8 +120,8 @@ class Differ:
         m, n = len(a), len(b)
         # get the generator that returns the x and y coords of the
         # reconstructed solution
-        trace = myers_diff(a, b)
-        backtrack = myers_backtrack(trace, a, b)
+        trace = self.myers_diff(a, b)
+        backtrack = self.myers_backtrack(trace, a, b)
         # for each prev_x, prev_y, x, y determine what kind of move
         # we made (insert, delete or equal) and make an appropriate
         # Edit that can be printed later.
@@ -127,13 +130,10 @@ class Differ:
             b_line = b[prev_y] if prev_y < n else None
 
             if a_line is not None and b_line is not None:
-                print(prev_x, prev_y, x, y, a_line, b_line)
                 if x == prev_x:
                     diff.appendleft(Edit("insert", a_line, b_line))
-                    # print("insert: ", a_line, b_line)
                 elif y == prev_y:
                     diff.appendleft(Edit("delete", a_line, b_line))
-                    # print("delete: ", a_line, b_line)
                 else:
                     diff.appendleft(Edit("equal", a_line, b_line))
 
@@ -149,8 +149,6 @@ class Differ:
         # find the edits made between both files
         diff = self.myers_git_diff(doc1.lines(), doc2.lines())
         diff_locs = []
-        print("#########")
-        print()
         # store the locations of each edit.
         # this preliminary step is done to be able to display
         # the buffer around the edits.
@@ -170,7 +168,7 @@ class Differ:
                 if prev_loc is None:
                     chunk_start, prev_loc = diff_loc, diff_loc
                     continue
-                if diff_loc - prev_loc <= Differ.BUFFER and num != len(diff_locs) - 1:
+                if diff_loc - prev_loc <= FileDifferentiator.BUFFER and num != len(diff_locs) - 1:
                     prev_loc = diff_loc
                 elif num != len(diff_locs) - 1:
                     chunk_locs.append((chunk_start, prev_loc))
@@ -182,7 +180,7 @@ class Differ:
 
         # print each chunk
         for start, end in chunk_locs:
-            to_print: list[Edit] = diff[max(0, start - Differ.BUFFER):min(len(diff), end + 1 + Differ.BUFFER)]
+            to_print: list[Edit] = diff[max(0, start - FileDifferentiator.BUFFER):min(len(diff), end + 1 + FileDifferentiator.BUFFER)]
             insertions = 0
             deletions = 0
             for edit in to_print:
@@ -204,6 +202,7 @@ class Differ:
                 new_length=len(to_print) - deletions
             )
             # print everything
+            print()
             print(header)
             for edit in to_print:
                 ...
