@@ -6,7 +6,7 @@
 
 from collections import deque
 
-from .utilities import Line, Edit, Document
+from .utilities import Edit, Document
 
 def myers_diff(a, b):
     # get length of respective elements
@@ -85,7 +85,7 @@ def myers_backtrack(trace, a, b):
             x, y = x - 1, y - 1
 
         # if we are not yet at the start, yield where we left off.
-        if d > 0:
+        if (d >= 0 and prev_y > 0):
             yield (prev_x, prev_y, x, y)
 
         x, y = prev_x, prev_y
@@ -127,10 +127,13 @@ class Differ:
             b_line = b[prev_y] if prev_y < n else None
 
             if a_line is not None and b_line is not None:
+                print(prev_x, prev_y, x, y, a_line, b_line)
                 if x == prev_x:
                     diff.appendleft(Edit("insert", a_line, b_line))
+                    # print("insert: ", a_line, b_line)
                 elif y == prev_y:
                     diff.appendleft(Edit("delete", a_line, b_line))
+                    # print("delete: ", a_line, b_line)
                 else:
                     diff.appendleft(Edit("equal", a_line, b_line))
 
@@ -146,13 +149,13 @@ class Differ:
         # find the edits made between both files
         diff = self.myers_git_diff(doc1.lines(), doc2.lines())
         diff_locs = []
+        print("#########")
+        print()
         # store the locations of each edit.
         # this preliminary step is done to be able to display
         # the buffer around the edits.
         for num, edit in enumerate(diff):
-            if edit.edit_type != "equal":
-                diff_locs.append(num)
-
+            diff_locs.append(num)
         chunk_locs = []
         prev_loc = None
         chunk_start = None
@@ -204,5 +207,5 @@ class Differ:
             print(header)
             for edit in to_print:
                 ...
-                print(edit)
+                # print(edit)
             print()
